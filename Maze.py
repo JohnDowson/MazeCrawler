@@ -1,35 +1,19 @@
-from os import system
+import os
 import time
 import random
 import platform
 #from enum import Enum
-system('mode con: cols=100 lines=40')
-if platform.system() == "Windows":
-#stolen code start
-	from ctypes import windll, create_string_buffer
-	h = windll.kernel32.GetStdHandle(-12)
-	csbi = create_string_buffer(22)
-	res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
-
-	if res:
-		import struct
-		(bufx, bufy, curx, cury, wattr,
-		left, top, right, bottom, maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
-		sizex = right - left + 1
-		sizey = bottom - top + 1
-	else:
-		sizex, sizey = 80, 25 # can't determine actual size - return default values
-#stolen code end
-else:
-	sizex, sizey = 20, 20
+os.system('mode con: cols=80 lines=40')
+sizex, sizey = os.get_terminal_size(1)
+# sizex, sizey = 80, 40
 #utils
 def wait(seconds):
 	time.sleep(seconds)
 def clearScreen():
 	if platform.system() == "Windows":
-		system('cls')
+		os.system('cls')
 	else:
-		system('clear')
+		os.system('clear')
 
 chars = ['█','╗','╚','═','║','╔','╝','▓']
 #             1   2   1   2   3   1
@@ -92,13 +76,17 @@ class Walker:
 		choices = []
 		if (self.y > 0 and not arrayofcells[self.y - 1][self.x].explored):
 			choices.append(arrayofcells[self.y - 1][self.x])
-		if not arrayofcells[self.y + 1][self.x].explored:
+		if ((self.y-1) < len(arrayofcells) and not arrayofcells[self.y + 1][self.x].explored):
 			choices.append(arrayofcells[self.y + 1][self.x])
-		if (self.x > 0 and not arrayofcells[self.y][self.x - 1].explored):
+		if ((self.x-1) > 0 and not arrayofcells[self.y][self.x - 1].explored):
 			choices.append(arrayofcells[self.y][self.x - 1])
-		if not arrayofcells[self.y][self.x + 1].explored:
+		if (self.x < len(arrayofcells[0]) and not arrayofcells[self.y][self.x + 1].explored):
 			choices.append(arrayofcells[self.y][self.x + 1])
-		return random.choice(choices)
+		if choices:
+			return random.choice(choices)
+		else:
+			return False
+
 	def arrive(self, tuple):
 		self.x = tuple[0]
 		self.y = tuple[1]
@@ -123,17 +111,22 @@ def main():
 	for walker in arrayofwalkers:
 		stacks[walker] = []
 	print(len(arrayofwalkers), "Walkers ready")
-	wait(1)
+	wait(2)
 	clearScreen()
 	#"Game"loop
 	while True:
-		wait(0.1)
+		wait(0.01)
 		framestring = ""
 		clearScreen()
 		for walker in arrayofwalkers:
 			nextcell = walker.walk(arrayofcells)
-			arrayofcells[walker.y][walker.x].leave(nextcell)
-			walker.arrive(nextcell.visit(walker))
+			if nextcell:
+				stacks[walker].append(nextcell)
+				arrayofcells[walker.y][walker.x].leave(nextcell)
+				walker.arrive(nextcell.visit(walker))
+			else:
+				nextcell = stacks[walker].pop()
+				walker.arrive(nextcell.visit(walker))
 		for row in arrayofcells:
 			for col in row:
 				framestring += col.repr
