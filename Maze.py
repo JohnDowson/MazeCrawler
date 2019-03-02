@@ -74,13 +74,13 @@ class Walker:
 		
 	def walk(self, arrayofcells):
 		choices = []
-		if (self.y > 0 and not arrayofcells[self.y - 1][self.x].explored):
+		if ((self.y-1) > 0 and not arrayofcells[self.y - 1][self.x].explored):
 			choices.append(arrayofcells[self.y - 1][self.x])
-		if ((self.y-1) < len(arrayofcells) and not arrayofcells[self.y + 1][self.x].explored):
+		if ((self.y+1) < len(arrayofcells) and not arrayofcells[self.y + 1][self.x].explored):
 			choices.append(arrayofcells[self.y + 1][self.x])
 		if ((self.x-1) > 0 and not arrayofcells[self.y][self.x - 1].explored):
 			choices.append(arrayofcells[self.y][self.x - 1])
-		if (self.x < len(arrayofcells[0]) and not arrayofcells[self.y][self.x + 1].explored):
+		if ((self.x+1) < len(arrayofcells[0]) and not arrayofcells[self.y][self.x + 1].explored):
 			choices.append(arrayofcells[self.y][self.x + 1])
 		if choices:
 			return random.choice(choices)
