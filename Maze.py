@@ -3,9 +3,9 @@ import time
 import random
 import platform
 #from enum import Enum
-os.system('mode con: cols=80 lines=40')
 sizex, sizey = os.get_terminal_size(1)
-# sizex, sizey = 80, 40
+if platform.system() == "Windows":
+	os.system('mode con: cols=%d lines=%d'%(sizex,sizey))#fix for weird behaivior in win cmd
 #utils
 def wait(seconds):
 	time.sleep(seconds)
@@ -48,22 +48,22 @@ class Cell:
 			self.path += 3
 		else:
 			self.path += 5
-		
-		if self.path == 3:
-			self.repr = chars[6]
-		elif self.path == 4:
-			self.repr = chars[3]
-		elif self.path == 5:
-			self.repr = chars[2]
-		elif self.path == 6:
-			self.repr = chars[1]
-		elif self.path == 7:
-			self.repr = chars[4]
-		elif self.path == 8:
-			self.repr = chars[5]
-		
+		if not self.explored:
+			if self.path == 3:
+				self.repr = chars[6]
+			elif self.path == 4:
+				self.repr = chars[3]
+			elif self.path == 5:
+				self.repr = chars[2]
+			elif self.path == 6:
+				self.repr = chars[1]
+			elif self.path == 7:
+				self.repr = chars[4]
+			elif self.path == 8:
+				self.repr = chars[5]
+
 		self.explored = True
-			
+
 class Walker:
 	def __init__(self, cell, seed):
 		self.x = cell.x
@@ -71,7 +71,7 @@ class Walker:
 		self.id = seed*self.x+self.y
 	def __hash__(self):
 		return hash(self.id)
-		
+
 	def walk(self, arrayofcells):
 		choices = []
 		if ((self.y-1) > 0 and not arrayofcells[self.y - 1][self.x].explored):
@@ -91,6 +91,14 @@ class Walker:
 		self.x = tuple[0]
 		self.y = tuple[1]
 
+def drawframe(arrayofcells):
+	#framestring = ""
+	clearScreen()
+	for row in arrayofcells:
+		framestring = ""
+		for col in row:
+			framestring += col.repr
+		print(framestring, end="", flush=True)
 
 
 def main():
@@ -105,7 +113,7 @@ def main():
 	print(sizex*sizey, " cells created")
 	#Create walkers
 	arrayofwalkers = [Walker(arrayofcells[6][6], 88)]
-	#arrayofwalkers.append(Walker(arrayofcells[10][10], 99))
+	#multiple walkers don't really work correctly
 	#create stacks
 	stacks = {}
 	for walker in arrayofwalkers:
@@ -114,25 +122,24 @@ def main():
 	wait(2)
 	clearScreen()
 	#"Game"loop
-	while True:
-		wait(0.01)
-		framestring = ""
-		clearScreen()
+	explore = True
+	while explore:
 		for walker in arrayofwalkers:
+			wait(0.01)
 			nextcell = walker.walk(arrayofcells)
 			if nextcell:
 				stacks[walker].append(nextcell)
 				arrayofcells[walker.y][walker.x].leave(nextcell)
 				walker.arrive(nextcell.visit(walker))
 			else:
-				nextcell = stacks[walker].pop()
-				walker.arrive(nextcell.visit(walker))
-		for row in arrayofcells:
-			for col in row:
-				framestring += col.repr
-		print(framestring, end="")
+				if len(stacks[walker]) > 0:
+					nextcell = stacks[walker].pop()
+					walker.arrive(nextcell.visit(walker))
+				else:
+					explore = False
+		drawframe(arrayofcells)
 
 
-	
+
 if __name__ == "__main__":
     main()
