@@ -1,24 +1,35 @@
+from enum import Enum
 import os
 import time
 import random
 import platform
-#from enum import Enum
+import curses
 sizex, sizey = os.get_terminal_size(1)
 if platform.system() == "Windows":
 	os.system('mode con: cols=%d lines=%d'%(sizex,sizey))#fix for weird behaivior in win cmd
 #utils
 def wait(seconds):
 	time.sleep(seconds)
-def clearScreen():
-	if platform.system() == "Windows":
-		os.system('cls')
-	else:
-		os.system('clear')
 
+if platform.system() == "Windows":
+	def clearScreen():
+		os.system('cls')
+else:
+	def clearScreen():
+		os.system('clear')
+def showRepr(representable,stdscr):
+    stdscr.addstr(representable.y, representable.x, representable.repr)
 chars = ['█','╗','╚','═','║','╔','╝','▓']
 #             1   2   1   2   3   1
 #             5   3   3   5   5   2
 #sum          6   5   4   7   8   3
+# parts ={
+	# "SOLID":'█',
+	# "PASSABLE":'░',
+	# "ENTITY":'#',
+	# "UNEXPLORED":'▓'
+	# }
+# cellsize = 3
 class Cell:
 	def __init__(self, xcoord, ycoord):
 		self.x = xcoord
@@ -28,7 +39,7 @@ class Cell:
 		self.path = 0
 
 	def visit(self, walker):
-		self.repr = chars[5]
+		#self.repr = chars[5]
 		if walker.x < self.x:
 			self.path = 1
 		elif walker.y < self.y:
@@ -37,9 +48,9 @@ class Cell:
 			self.path = 3
 		else:
 			self.path = 5
-		return (self.x, self.y)
+		return (self.x, self.y, self)
 
-	def leave(self, nextcell):
+	def leave(self, nextcell, stdscr):
 		if nextcell.x < self.x:
 			self.path += 1
 		elif nextcell.y < self.y:
@@ -48,7 +59,8 @@ class Cell:
 			self.path += 3
 		else:
 			self.path += 5
-		if not self.explored:
+		if self.explored == False:
+			self.explored = True
 			if self.path == 3:
 				self.repr = chars[6]
 			elif self.path == 4:
@@ -61,14 +73,18 @@ class Cell:
 				self.repr = chars[4]
 			elif self.path == 8:
 				self.repr = chars[5]
-
-		self.explored = True
+			try:
+				showRepr(self,stdscr)
+			except:
+				print(self.repr, self.x, self.y, sizex, sizey)
+				wait(99)
 
 class Walker:
 	def __init__(self, cell, seed):
 		self.x = cell.x
 		self.y = cell.y
 		self.id = seed*self.x+self.y
+		self.currentcell = cell
 	def __hash__(self):
 		return hash(self.id)
 
@@ -90,6 +106,7 @@ class Walker:
 	def arrive(self, tuple):
 		self.x = tuple[0]
 		self.y = tuple[1]
+		self.currentcell = tuple[2]
 
 def drawframe(arrayofcells):
 	#framestring = ""
@@ -101,16 +118,16 @@ def drawframe(arrayofcells):
 		print(framestring, end="", flush=True)
 
 
-def main():
+def main(stdscr):
 	print("hi")
 	#Create cells
 	arrayofcells = []
-	for row in range(sizey):
+	for row in range(sizey-1):
 		arrayofcells.append([])
-		for col in range(sizex):
+		for col in range(sizex-1):
 			arrayofcells[row].append(Cell(col, row))
 	print(sizex, sizey)
-	print(sizex*sizey, " cells created")
+	print((sizex-1)*(sizey-1), " cells created")
 	#Create walkers
 	arrayofwalkers = [Walker(arrayofcells[6][6], 88)]
 	#multiple walkers don't really work correctly
@@ -120,26 +137,31 @@ def main():
 		stacks[walker] = []
 	print(len(arrayofwalkers), "Walkers ready")
 	wait(2)
-	clearScreen()
+	stdscr.clear()
+	stdscr.refresh()
 	#"Game"loop
 	explore = True
+	drawframe(arrayofcells)
 	while explore:
+		wait(0.01)
 		for walker in arrayofwalkers:
-			wait(0.01)
 			nextcell = walker.walk(arrayofcells)
 			if nextcell:
 				stacks[walker].append(nextcell)
-				arrayofcells[walker.y][walker.x].leave(nextcell)
+				#arrayofcells[walker.y][walker.x].leave(nextcell)
+				walker.currentcell.leave(nextcell,stdscr)
 				walker.arrive(nextcell.visit(walker))
 			else:
 				if len(stacks[walker]) > 0:
 					nextcell = stacks[walker].pop()
+					walker.currentcell.leave(nextcell,stdscr)
 					walker.arrive(nextcell.visit(walker))
 				else:
 					explore = False
-		drawframe(arrayofcells)
+		stdscr.refresh()
+		#drawframe(arrayofcells)
 
 
 
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)
