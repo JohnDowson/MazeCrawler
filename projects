@@ -20,6 +20,7 @@ indent_mode=2
 [project]
 name=MazeCrawler
 base_path=/home/johnd/Git/Pythonprojects/MazeCrawler
+description=
 
 [long line marker]
 long_line_behaviour=1
@@ -28,4 +29,3 @@ long_line_column=100
 [files]
 current_page=0
 FILE_NAME_0=803;Python;0;EUTF-8;1;1;0;%2Fhome%2Fjohnd%2FGit%2FPythonprojects%2FMazeCrawler%2FMaze.py;0;4
-FILE_NAME_1=42;Python;0;EUTF-8;1;1;0;%2Fhome%2Fjohnd%2FGit%2FPythonprojects%2FMazeCrawler%2FMaze-pygame.py;0;4
