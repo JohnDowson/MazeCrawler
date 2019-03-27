@@ -3,17 +3,17 @@ chars = ['█','╗','╚','═','║','╔','╝','▓']
 #             5   3   3   5   5   2
 #sum          6   5   4   7   8   3
 class Cell:
-    explored = False
-    path = 0
-    neighbours = []
-    occupied = False
     connections = [] # for future use instead of path
 
     def __init__(self, xcoord, ycoord, parent):
         self.repr = chars[0]
+        self.path = 0
+        self.explored = False
+        self.occupied = False
         self.x = xcoord
         self.y = ycoord
         self.parent = parent
+        self.neighbours =[]
 
     def getNeighbours(self): #  parent is a world cell exists in
         if self.x+1 < self.parent.sizex: # neighbour one down
